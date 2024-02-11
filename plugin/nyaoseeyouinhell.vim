@@ -71,8 +71,9 @@ PROCESS
 endfu
 
 fu! RubocopStyle()
+  " .. expand('%')
   call job_start(
-  \   'rubocop --server -A --format json ' .. expand('%'),
+  \   'rubocop --server --format json --config .rubocop.yml -A ',
   \   {
   \     'out_cb': {ch, msg -> Append(msg)},
   \     'close_cb': {ch -> ProcessResults()},
