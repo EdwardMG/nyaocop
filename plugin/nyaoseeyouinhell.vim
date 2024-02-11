@@ -72,7 +72,7 @@ endfu
 
 fu! RubocopStyle()
   call job_start(
-  \   'rubocop -A --format json ' .. expand('%'),
+  \   'rubocop --server -A --format json ' .. expand('%'),
   \   {
   \     'out_cb': {ch, msg -> Append(msg)},
   \     'close_cb': {ch -> ProcessResults()},
