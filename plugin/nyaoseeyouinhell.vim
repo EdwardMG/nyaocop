@@ -1,4 +1,5 @@
 let g:rubocop_json_lines = "{}"
+let g:rubopop = 0
 
 fu! Echo(msg)
   echo a:msg
@@ -51,9 +52,10 @@ JSON.parse(Var["g:rubocop_json_lines"])["files"].each do |f|
   end
 end
 
+Ev.popup_close(Var["g:rubopop"]) if Var["g:rubopop"] > 0
+
 if messages.length > 0
-  Ev.popup_clear
-  Ev.popup_create(
+  Var["g:rubopop"] = Ev.popup_create(
     messages,
     { title:       'Cops',
      'padding':   [1,1,1,1],
@@ -69,8 +71,6 @@ PROCESS
 endfu
 
 fu! RubocopStyle()
-  g:results = []
-
   call job_start(
   \   'rubocop -A --format json ' .. expand('%'),
   \   {
