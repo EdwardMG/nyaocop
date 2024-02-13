@@ -71,13 +71,12 @@ PROCESS
 endfu
 
 fu! RubocopStyle()
-  " .. expand('%')
   call job_start(
-  \   'rubocop --server --format json --config .rubocop.yml -A ',
+  \   'bundle exec rubocop --server --format json --config .rubocop.yml -A ' .. expand('%'),
   \   {
-  \     'out_cb': {ch, msg -> Append(msg)},
-  \     'close_cb': {ch -> ProcessResults()},
-  \     'err_cb': {ch, msg -> Echo(msg)}
+  \     'out_cb':   {ch, msg -> Append(msg)},
+  \     'close_cb': {ch      -> ProcessResults()},
+  \     'err_cb':   {ch, msg -> Echo(msg)}
   \   }
   \ )
 endfu
