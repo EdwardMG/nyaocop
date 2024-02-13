@@ -45,7 +45,6 @@ JSON.parse(Var["g:rubocop_json_lines"])["files"].each do |f|
         i, 'cops', "cop", Ev.bufnr,
         {lnum: lnum, priority: 99}
       )
-      puts o.inspect
     end
 
     i += 1
