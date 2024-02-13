@@ -67,7 +67,7 @@ module NyaoCop
 
   def self.run
     args = "--server --format json -A"
-    args << " --config .rubocopy.yml" if File.exist?(".rubocop.yml")
+    args << " --config .rubocop.yml" if File.exist?(".rubocop.yml")
     env = (File.exist?("Gemfile") || File.exist?(".bundle")) ? "bundle exec" : ""
 
     Ev.job_start(
