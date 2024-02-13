@@ -1,4 +1,4 @@
-let g:rubocop_json_lines = "{}"
+let g:rubocop_json = "{}"
 let g:rubopop = 0
 
 fu! Echo(msg)
@@ -6,7 +6,7 @@ fu! Echo(msg)
 endfu
 
 fu! Append(msg)
-  let g:rubocop_json_lines = a:msg
+  let g:rubocop_json = a:msg
 endfu
 
 fu! ProcessResults()
@@ -19,8 +19,8 @@ Ev.sign_unplace "cops"
 messages = []
 
 i = 1
-JSON.parse(Var["g:rubocop_json_lines"])["files"].each do |f|
-  f["offenses"].each_with_index do |o|
+JSON.parse(Var["g:rubocop_json"])["files"].each do |f|
+  f["offenses"].each do |o|
     unless o["correctable"]
       messages << "L#{o["location"]["start_line"]} #{o["message"]}"
       # "severity": "convention",
