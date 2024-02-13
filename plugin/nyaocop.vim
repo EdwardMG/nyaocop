@@ -1,86 +1,91 @@
-let g:rubocop_json = "{}"
-let g:rubopop = 0
-
-fu! Echo(msg)
-  echo a:msg
-endfu
-
-fu! Append(msg)
-  let g:rubocop_json = a:msg
-endfu
-
-fu! ProcessResults()
-ruby << PROCESS
+fu! s:Setup()
+ruby << NYAOCOP
 require 'json'
 
-Ev.sign_define "cop", { text: "F", texthl: "RedText", linehl: "RedText" }
-Ev.sign_unplace "cops"
+module NyaoCop
+  @results = "{}"
+  @rubopop = 0
 
-messages = []
+  def self.error(msg)   = puts msg
+  def self.iter_cb(msg) = @results = msg
 
-i = 1
-JSON.parse(Var["g:rubocop_json"])["files"].each do |f|
-  f["offenses"].each do |o|
-    unless o["correctable"]
-      messages << "L#{o["location"]["start_line"]} #{o["message"]}"
-      # "severity": "convention",
-      # "message": "Style/Documentation: Missing top-level documentation comment for `class Blah`.",
-      # "cop_name": "Style/Documentation",
-      # "corrected": false,
-      # "correctable": false,
+  def self.process_results
+    Ev.sign_define "cop", { text: "F", texthl: "RedText", linehl: "RedText" }
+    Ev.sign_unplace "cops"
+
+    messages = []
+
+    i = 1
+    JSON.parse(@results)["files"]&.each do |f|
+      f["offenses"]&.each do |o|
+        unless o["correctable"]
+          messages << "L#{o["location"]["start_line"]} #{o["message"]}"
+          # "severity": "convention",
+          # "message": "Style/Documentation: Missing top-level documentation comment for `class Blah`.",
+          # "cop_name": "Style/Documentation",
+          # "corrected": false,
+          # "correctable": false,
 
 
-      lnum = o["location"]["start_line"]
-      # "location": {
-      #   "start_line": 1,
-      #   "start_column": 1,
-      #   "last_line": 1,
-      #   "last_column": 10,
-      #   "length": 10,
-      #   "line": 1,
-      #   "column": 1
-      # }
+          lnum = o["location"]["start_line"]
+          # "location": {
+          #   "start_line": 1,
+          #   "start_column": 1,
+          #   "last_line": 1,
+          #   "last_column": 10,
+          #   "length": 10,
+          #   "line": 1,
+          #   "column": 1
+          # }
 
-      Ev.sign_place(
-        i, 'cops', "cop", Ev.bufnr,
-        {lnum: lnum, priority: 99}
-      )
+          Ev.sign_place(
+            i, 'cops', "cop", Ev.bufnr,
+            {lnum: lnum, priority: 99}
+          )
+        end
+
+        i += 1
+      end
     end
 
-    i += 1
+    Ev.popup_close(@rubopop) if @rubopop > 0
+
+    if messages.length > 0
+      @rubopop = Ev.popup_create(
+        messages,
+        { title:       'Cops',
+         'padding':   [1,1,1,1],
+         'line':      1,
+         'col':       Var["&columns"],
+         'pos':       'topright',
+         'scrollbar': 1
+        }
+      )
+    end
+    Ex.silent 'edit!'
+  end
+
+  def self.run
+    args = "--server --format json -A"
+    args << " --config .rubocopy.yml" if File.exist?(".rubocop.yml")
+    env = (File.exist?("Gemfile") || File.exist?(".bundle")) ? "bundle exec" : ""
+
+    Ev.job_start(
+      "#{env} rubocop #{args} " + Ev.expand('%:p'),
+      {
+        'out_cb':   "{ch, msg -> rubyeval('NyaoCop.iter_cb Var.msg')}".lit,
+        'close_cb': "{ch      -> rubyeval('NyaoCop.process_results')}".lit,
+        'err_cb':   "{ch, msg -> rubyeval('NyaoCop.error Var.msg')}".lit
+      }
+    )
   end
 end
-
-Ev.popup_close(Var["g:rubopop"]) if Var["g:rubopop"] > 0
-
-if messages.length > 0
-  Var["g:rubopop"] = Ev.popup_create(
-    messages,
-    { title:       'Cops',
-     'padding':   [1,1,1,1],
-     'line':      1,
-     'col':       Var["&columns"],
-     'pos':       'topright',
-     'scrollbar': 1
-    }
-  )
-end
-PROCESS
-:silent edit!
+NYAOCOP
 endfu
 
-fu! RubocopStyle()
-  call job_start(
-  \   'bundle exec rubocop --server --format json --config .rubocop.yml -A ' .. expand('%'),
-  \   {
-  \     'out_cb':   {ch, msg -> Append(msg)},
-  \     'close_cb': {ch      -> ProcessResults()},
-  \     'err_cb':   {ch, msg -> Echo(msg)}
-  \   }
-  \ )
-endfu
+call s:Setup()
 
 augroup nyaoseeyouinhell
   autocmd!
-  au BufWritePost *.rb silent call RubocopStyle()
+  au BufWritePost *.rb silent ruby NyaoCop.run
 augroup END
